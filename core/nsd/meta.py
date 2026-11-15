@@ -1,8 +1,3 @@
-"""NSD metadata: which COCO image is which, and which trial showed what.
-
-Everything comes from nsd_stim_info_merged.csv (verified identical to nsd_expdesign.mat).
-"""
-
 from __future__ import annotations
 
 import ast

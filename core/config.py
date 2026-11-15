@@ -1,9 +1,3 @@
-"""Environment-driven settings (env prefix NA_, or a local .env file).
-
-    NA_DATA_ROOT   "r2://<bucket>/<prefix>" or a local directory (default ./data/store)
-    NA_COCO_ROOT   directory holding extracted COCO 2017 (train2017/, val2017/)
-"""
-
 from __future__ import annotations
 
 from functools import lru_cache
@@ -12,6 +6,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+ENV_FILE = Path(__file__).resolve().parent / ".env"  # core/.env; gitignored, never uploaded to Modal
 
 
 class DataRoot(BaseModel):
@@ -41,7 +37,7 @@ class DataRoot(BaseModel):
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="NA_", env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_prefix="NA_", env_file=ENV_FILE, extra="ignore")
 
     data_root: str = "./data/store"
     coco_root: Path = Path("./data/coco")

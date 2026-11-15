@@ -1,5 +1,3 @@
-"""Anonymous, read-only access to the public NSD bucket (s3://natural-scenes-dataset, us-east-2)."""
-
 from __future__ import annotations
 
 import gzip

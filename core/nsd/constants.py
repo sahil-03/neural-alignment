@@ -1,5 +1,3 @@
-"""Facts about NSD, verified against nsd_stim_info_merged.csv and the S3 bucket listing."""
-
 from __future__ import annotations
 
 from typing import Annotated

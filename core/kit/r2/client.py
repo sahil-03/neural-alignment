@@ -9,8 +9,10 @@ import boto3
 from boto3.s3.transfer import TransferConfig
 from botocore.config import Config
 from botocore.exceptions import ClientError
-from pydantic import BaseModel, ConfigDict, SecretStr
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from core.config import ENV_FILE
 
 _MB = 1024**2
 _NOT_FOUND_CODES = {"404", "NoSuchKey", "NotFound"}
@@ -18,15 +20,18 @@ _DELETE_BATCH = 1000  # S3 DeleteObjects limit
 
 
 class R2Config(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="R2_", env_file=".env", extra="ignore")
+    """R2 credentials from the environment, or core/.env (CLOUDFLARE_* names)."""
 
-    account_id: str
-    access_key_id: SecretStr
-    secret_access_key: SecretStr
+    model_config = SettingsConfigDict(env_file=ENV_FILE, extra="ignore", populate_by_name=True)
+
+    account_id: str = Field(validation_alias="CLOUDFLARE_ACCOUNT_ID")
+    access_key_id: SecretStr = Field(validation_alias="CLOUDFLARE_R2_ACCESS_KEY_ID")
+    secret_access_key: SecretStr = Field(validation_alias="CLOUDFLARE_R2_SECRET_ACCESS_KEY")
+    s3_endpoint: str | None = Field(default=None, validation_alias="CLOUDFLARE_S3_ENDPOINT")
 
     @property
     def endpoint_url(self) -> str:
-        return f"https://{self.account_id}.r2.cloudflarestorage.com"
+        return (self.s3_endpoint or f"https://{self.account_id}.r2.cloudflarestorage.com").rstrip("/")
 
 
 class ObjectInfo(BaseModel):
