@@ -8,7 +8,7 @@ lint-fix:
 	uv run ruff check --fix .
 
 check:
-	uv run mypy core
+	uv run --group gpu mypy core
 
 # Create/replace the "r2" secret from the four R2 values in core/.env (CLOUDFLARE_API_TOKEN stays local).
 modal-secret:

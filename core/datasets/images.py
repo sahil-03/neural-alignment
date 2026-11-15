@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 
 import numpy as np
@@ -19,6 +20,12 @@ from core.storage.store import Store
 
 COCO_SPLITS: tuple[CocoSplit, ...] = ("train2017", "val2017")
 COCO_COUNTS: dict[str, int] = {"train2017": 118_287, "val2017": 5_000}
+# Image sources: name -> table key. Feature extraction iterates over these, so adding a source here
+# (plus its ImageSet constructor in _BUILDERS below) is enough for it to be embedded and scored.
+IMAGE_SOURCES: dict[str, str] = {
+    "nsd": backends.NSD_IMAGES,
+    "candidates": backends.CANDIDATE_IMAGES,
+}
 
 
 class CocoDir(BaseModel):
@@ -38,29 +45,12 @@ class CocoDir(BaseModel):
         rows = [(int(p.stem), s) for s in COCO_SPLITS for p in (self.root / s).glob("*.jpg")]
         return pd.DataFrame(rows, columns=["coco_id", "coco_split"])
 
+    def split_complete(self, split: CocoSplit) -> bool:
+        d = self.root / split
+        return d.is_dir() and sum(1 for _ in d.glob("*.jpg")) == COCO_COUNTS[split]
+
     def is_complete(self) -> bool:
-        return all(
-            (self.root / s).is_dir() and sum(1 for _ in (self.root / s).glob("*.jpg")) == n
-            for s, n in COCO_COUNTS.items()
-        )
-
-
-def center_square(img: Image.Image) -> Image.Image:
-    w, h = img.size
-    s = min(w, h)
-    left, top = (w - s) // 2, (h - s) // 2
-    return img.crop((left, top, left + s, top + s))
-
-
-def apply_crop(img: Image.Image, crop: CropBox) -> Image.Image:
-    """NSD's crop. Verified to reproduce NSD stimuli to ~0.5/255 mean abs error.
-
-    Rounding can leave the crop 1px off square (e.g. 428x427); NSD resized that directly, so we
-    deliberately do not trim it (trimming raised the error to ~3.7/255).
-    """
-    w, h = img.size
-    box = (round(crop.left * w), round(crop.top * h), round(w * (1 - crop.right)), round(h * (1 - crop.bottom)))
-    return img.crop(box)
+        return all(self.split_complete(s) for s in COCO_SPLITS)
 
 
 class ImageSpec(BaseModel):
@@ -119,6 +109,24 @@ class ImageSet(BaseModel):
         return img.resize((STIM_SIZE, STIM_SIZE), Image.Resampling.BICUBIC)
 
 
+def center_square(img: Image.Image) -> Image.Image:
+    w, h = img.size
+    s = min(w, h)
+    left, top = (w - s) // 2, (h - s) // 2
+    return img.crop((left, top, left + s, top + s))
+
+
+def apply_crop(img: Image.Image, crop: CropBox) -> Image.Image:
+    """NSD's crop. Verified to reproduce NSD stimuli to ~0.5/255 mean abs error.
+
+    Rounding can leave the crop 1px off square (e.g. 428x427); NSD resized that directly, so we
+    deliberately do not trim it (trimming raised the error to ~3.7/255).
+    """
+    w, h = img.size
+    box = (round(crop.left * w), round(crop.top * h), round(w * (1 - crop.right)), round(h * (1 - crop.bottom)))
+    return img.crop(box)
+
+
 def candidate_table(coco: CocoDir, nsd_images: pd.DataFrame) -> pd.DataFrame:
     """COCO 2017 train+val minus NSD's 73k.
 
@@ -141,9 +149,22 @@ def build_candidates(store: Store, coco: CocoDir, *, force: bool = False) -> int
     return len(store.load_frame(backends.CANDIDATE_IMAGES))
 
 
+_BUILDERS: dict[str, Callable[[pd.DataFrame, CocoDir], ImageSet]] = {
+    "nsd": ImageSet.nsd,
+    "candidates": ImageSet.candidates,
+}
+
+
+def _table_key(name: str) -> str:
+    if name not in IMAGE_SOURCES:
+        raise ValueError(f"unknown image source {name!r}; choose from {sorted(IMAGE_SOURCES)}")
+    return IMAGE_SOURCES[name]
+
+
+def source_ids(store: Store, name: str) -> np.ndarray:
+    """Sorted COCO ids of an image source (no COCO access needed)."""
+    return np.sort(store.load_frame(_table_key(name))["coco_id"].to_numpy(dtype=np.int64))
+
+
 def load_image_set(store: Store, name: str, coco: CocoDir) -> ImageSet:
-    if name == "nsd":
-        return ImageSet.nsd(store.load_frame(backends.NSD_IMAGES), coco)
-    if name == "candidates":
-        return ImageSet.candidates(store.load_frame(backends.CANDIDATE_IMAGES), coco)
-    raise ValueError(f"unknown image set {name!r}")
+    return _BUILDERS[name](store.load_frame(_table_key(name)), coco)

@@ -18,12 +18,14 @@ and never copied; COCO lives on a Modal Volume.
 ```
 core/
   config.py        settings (NA_* variables, read from the environment or core/.env)
-  kit/r2/          R2 client
-  storage/         Store: typed save/load over local disk or R2; artifact paths
+  storage/         Store: typed save/load over local disk or R2; artifact paths; R2 client
   nsd/             NSD access, metadata, voxel masks, beta processing
   datasets/        data objects (features, betas, records, images, splits)
+  features/        image features (DINOv2, CLIP) and the gold score
+  scoring.py       the Scorer interface shared by gold, reward models and evaluation
   pipelines/       local CLI for the data steps
   remote/          Modal app (modal_app.py) and remote entrypoints (data.py, ...)
+  utils/           shared helpers
 ```
 
 Every step is idempotent: re-running skips finished work, so an interrupted run can simply be

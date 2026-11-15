@@ -51,10 +51,16 @@ class ArrayBundle(BaseModel):
         return store.exists(f"{key}/{MANIFEST}")
 
     @classmethod
-    def load(cls, store: Store, key: str) -> Self:
+    def load_manifest(cls, store: Store, key: str) -> BundleManifest:
+        """Shapes and dtypes without downloading the arrays."""
         manifest = store.load_model(f"{key}/{MANIFEST}", BundleManifest)
         if manifest.kind != cls.__name__:
             raise TypeError(f"{key} holds a {manifest.kind}, not a {cls.__name__}")
+        return manifest
+
+    @classmethod
+    def load(cls, store: Store, key: str) -> Self:
+        cls.load_manifest(store, key)
         return cls(**{name: store.load_array(f"{key}/{name}.npy") for name in cls.model_fields})
 
 

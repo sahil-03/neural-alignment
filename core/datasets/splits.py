@@ -1,5 +1,3 @@
-"""Per-subject splits, computed once and shared by every model so comparisons use identical images."""
-
 from __future__ import annotations
 
 import numpy as np

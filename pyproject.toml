@@ -29,6 +29,10 @@ dev = [
     "scipy-stubs>=1.18.1.1",
     "types-tqdm>=4.70.0.20261102",
 ]
+gpu = [
+    "torch>=2.15.0",
+    "transformers>=5.23.0",
+]
 
 [build-system]
 requires = ["hatchling"]

@@ -9,8 +9,8 @@ import pandas as pd
 from pydantic import BaseModel
 
 from core.config import Settings
-from core.kit.r2.client import R2Client
 from core.storage.backends import R2, Disk, StorageBackend
+from core.storage.r2 import R2Client
 
 M = TypeVar("M", bound=BaseModel)
 

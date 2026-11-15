@@ -1,15 +1,3 @@
-"""Data-preparation steps. Each is idempotent and prints a pydantic summary.
-
-    uv run python -m core.pipelines.data metadata
-    uv run python -m core.pipelines.data verify --subject 1        # ~1.5 GB download; run remotely
-    uv run python -m core.pipelines.data betas --subject 1 [--sessions 1 2 3]
-    uv run python -m core.pipelines.data aggregate --subject 1
-    uv run python -m core.pipelines.data candidates               # needs NA_COCO_ROOT populated
-    uv run python -m core.pipelines.data splits --subject 1
-
-The same functions are what remote (Modal) jobs will call.
-"""
-
 from __future__ import annotations
 
 import argparse

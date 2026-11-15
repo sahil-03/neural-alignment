@@ -5,7 +5,7 @@ import tempfile
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
-from core.kit.r2.client import R2Client
+from core.storage.r2 import R2Client
 
 NSD_IMAGES = "meta/nsd_images.parquet"
 CANDIDATE_IMAGES = "meta/candidate_images.parquet"
@@ -72,6 +72,13 @@ def feature_shard(feature: str, source: str, shard_size: int, index: int) -> str
 
 def splits(subject: int) -> str:
     return f"splits/{_subj(subject)}.parquet"
+
+
+def gold(source: str) -> str:
+    return f"{GOLD}/{source}"
+
+
+GOLD_PARAMS = f"{GOLD}/params.json"
 
 
 class Disk:
